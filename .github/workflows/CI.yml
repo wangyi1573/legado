@@ -47,7 +47,7 @@ jobs:
           echo "RELEASE_KEY_PASSWORD='${{ secrets.RELEASE_KEY_PASSWORD }}'" >> gradle.properties
           echo "RELEASE_STORE_PASSWORD='${{ secrets.RELEASE_STORE_PASSWORD }}'" >> gradle.properties
           echo "RELEASE_FILE='./key.jks'" >> gradle.properties
-          echo ${{ secrets.RELEASE_KEY_STORE }} | base64 --decode > $GITHUB_WORKSPACE/app/key.js
+          echo ${{ secrets.RELEASE_KEY_STORE }} | base64 --decode > ${{ github.workspace }}/app/key.js
 
       - name: Unify Version Name
         run: |
@@ -90,7 +90,7 @@ jobs:
       - name: Push Assets To "release" Branch
         if: ${{ github.actor == 'gedoor' }}
         run: |
-          cd ${{ GITHUB_WORKSPACE }}/apk
+          cd ${{ github.workspace }}/apk
           git init
           git checkout -b release
           git config user.name "github-actions[bot]"
