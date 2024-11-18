@@ -106,8 +106,8 @@ jobs:
           cd $GITHUB_WORKSPACE/apk/
           git init
           git checkout -b release
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name ""wangyi1573"
+          git config --global user.email "wangyi1573@users.noreply.github.com"
           git remote add origin "https://${{ github.actor }}:${{ secrets.ACTIONS_TOKEN }}@github.com/${{ github.actor }}/release"
           git add *.apk
           git commit -m "${{ env.VERSION }}"
