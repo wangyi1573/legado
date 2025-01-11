@@ -16,6 +16,7 @@ import io.legado.app.help.book.isImage
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.readSimulating
 import io.legado.app.help.book.simulatedTotalChapterNum
+import io.legado.app.help.book.update
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.coroutine.Coroutine
@@ -169,7 +170,11 @@ object ReadBook : CoroutineScope by MainScope() {
             appDb.bookSourceDao.getBookSource(book.origin)?.let {
                 bookSource = it
                 if (book.getImageStyle().isNullOrBlank()) {
-                    book.setImageStyle(it.getContentRule().imageStyle)
+                    val imageStyle = it.getContentRule().imageStyle
+                    book.setImageStyle(imageStyle)
+                    if (imageStyle.equals(Book.imgStyleSingle, true)) {
+                        book.setPageAnim(0)
+                    }
                 }
             } ?: let {
                 bookSource = null
