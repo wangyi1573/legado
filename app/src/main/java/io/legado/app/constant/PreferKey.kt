@@ -95,6 +95,8 @@ object PreferKey {
     const val bitmapCacheSize = "bitmapCacheSize"
     const val imageRetainNum = "imageRetainNum"
     const val preDownloadNum = "preDownloadNum"
+    const val mangaPreDownloadNum = "mangaPreDownloadNum"
+    const val singlePageScrolling = "singlePageScrolling"
     const val autoRefresh = "auto_refresh"
     const val defaultToRead = "defaultToRead"
     const val exportCharset = "exportCharset"
@@ -153,6 +155,8 @@ object PreferKey {
     const val streamReadAloudAudio = "streamReadAloudAudio"
     const val pauseReadAloudWhilePhoneCalls = "pauseReadAloudWhilePhoneCalls"
     const val readAloudByMediaButton = "readAloudByMediaButton"
+    const val showMangaUi = "showMangaUi"
+    const val disableMangaScaling = "disableMangaScaling"
 
     const val cPrimary = "colorPrimary"
     const val cAccent = "colorAccent"

@@ -604,5 +604,30 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.toastOnUi("当前没有配置菜单区域,自动恢复中间区域为菜单.")
         }
     }
+
+    //跳转到漫画界面不使用富文本模式
+    val showMangaUi: Boolean
+        get() = appCtx.getPrefBoolean(PreferKey.showMangaUi, true)
+
+    //禁用漫画缩放
+    var disableMangaScaling: Boolean
+        get() = appCtx.getPrefBoolean(PreferKey.disableMangaScaling, true)
+        set(value) {
+            appCtx.putPrefBoolean(PreferKey.disableMangaScaling, value)
+        }
+
+    //漫画预加载数量
+    var mangaPreDownloadNum
+        get() = appCtx.getPrefInt(PreferKey.mangaPreDownloadNum, 10)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.mangaPreDownloadNum, value)
+        }
+
+    //单页滚动
+    var singlePageScrolling
+        get() = appCtx.getPrefBoolean(PreferKey.singlePageScrolling, false)
+        set(value) {
+            appCtx.putPrefBoolean(PreferKey.singlePageScrolling, value)
+        }
 }
 

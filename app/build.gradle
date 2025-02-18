@@ -242,6 +242,7 @@ dependencies {
 
     //Glide
     implementation(libs.glide.glide)
+    implementation(libs.glide.okhttp)
     ksp(libs.glide.ksp)
 
     //Svg
@@ -283,6 +284,8 @@ dependencies {
     implementation platform(libs.firebase.bom)
     implementation libs.firebase.analytics
     implementation libs.firebase.perf
+
+    implementation libs.glide.recyclerview
 
     //LeakCanary, 内存泄露检测
     //debugImplementation('com.squareup.leakcanary:leakcanary-android:2.7')
