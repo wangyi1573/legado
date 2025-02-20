@@ -629,5 +629,19 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         set(value) {
             appCtx.putPrefBoolean(PreferKey.singlePageScrolling, value)
         }
+
+    //点击翻页
+    var disableClickScroller
+        get() = appCtx.getPrefBoolean(PreferKey.disableClickScroller, false)
+        set(value) {
+            appCtx.putPrefBoolean(PreferKey.disableClickScroller, value)
+        }
+
+    //漫画滚动速度
+    var mangaAutoPageSpeed
+        get() = appCtx.getPrefInt(PreferKey.mangaAutoPageSpeed, 3)
+        set(value) {
+            appCtx.putPrefInt(PreferKey.mangaAutoPageSpeed, value)
+        }
 }
 

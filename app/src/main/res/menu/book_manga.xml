@@ -37,4 +37,24 @@
         android:checked="false"
         android:title="@string/disable_manga_scaling"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_disable_click_scroller"
+        android:checkable="true"
+        android:checked="false"
+        android:title="@string/disable_manga_click_scroller"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_enable_auto_page"
+        android:checkable="true"
+        android:checked="false"
+        android:title="@string/enable_auto_page_scroller"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_manga_auto_page_speed"
+        android:visible="false"
+        android:title="@string/manga_auto_page_speed"
+        app:showAsAction="never" />
 </menu>
