@@ -8,6 +8,7 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import io.legado.app.exception.NoStackTraceException
 import splitties.init.appCtx
@@ -66,6 +67,10 @@ data class FileDoc(
     }
 
     companion object {
+
+        fun fromDir(path: String): FileDoc {
+            return fromUri(path.toUri(), true)
+        }
 
         fun fromUri(uri: Uri, isDir: Boolean): FileDoc {
             if (uri.isContentScheme()) {
@@ -284,6 +289,14 @@ fun FileDoc.writeText(text: String) {
     }
 }
 
+fun FileDoc.writeFile(file: File) {
+    openOutputStream().getOrThrow().use { out ->
+        file.inputStream().use {
+            it.copyTo(out)
+        }
+    }
+}
+
 fun FileDoc.delete() {
     asFile()?.let {
         FileUtils.delete(it, true)
@@ -291,14 +304,14 @@ fun FileDoc.delete() {
     asDocumentFile()?.delete()
 }
 
-fun FileDoc.checkWrite(): Boolean? {
+fun FileDoc.checkWrite(): Boolean {
     if (!isDir) {
         throw NoStackTraceException("只能检查目录")
     }
     asFile()?.let {
         return it.checkWrite()
     }
-    return asDocumentFile()?.checkWrite()
+    return asDocumentFile()!!.checkWrite()
 }
 
 /**
@@ -345,17 +358,22 @@ fun DocumentFile.readBytes(context: Context): ByteArray {
 }
 
 fun DocumentFile.checkWrite(): Boolean {
+    var file: DocumentFile? = null
     return try {
         val filename = System.currentTimeMillis().toString()
-        createFile(FileUtils.getMimeType(filename), filename)?.let {
-            it.openOutputStream()?.let { out ->
-                out.use { }
-                it.delete()
-                return true
+        file = createFile(FileUtils.getMimeType(filename), filename)
+        file?.openOutputStream()?.let { out ->
+            out.bufferedWriter().use { it.write(filename) }
+            file.openInputStream()?.let { input ->
+                input.bufferedReader().use {
+                    return it.readText() == filename
+                }
             }
         }
         false
     } catch (e: Exception) {
         false
+    } finally {
+        file?.delete()
     }
 }
