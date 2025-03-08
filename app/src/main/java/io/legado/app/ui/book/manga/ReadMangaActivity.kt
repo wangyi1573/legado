@@ -255,12 +255,16 @@ class ReadMangaActivity : VMBaseActivity<ActivityMangaBinding, ReadMangaViewMode
         justInitData = true
     }
 
-    override fun upContent(finish: Boolean) {
+    override fun upContent() {
         lifecycleScope.launch {
             setTitle(ReadManga.book?.name)
-            val (pos, list) = withContext(IO) { ReadManga.mangaContents }
+            val data = withContext(IO) { ReadManga.mangaContents }
+            val pos = data.pos
+            val list = data.contents
+            val curFinish = data.curFinish
+            val nextFinish = data.nextFinish
             mAdapter.submitList(list) {
-                if (loadingViewVisible && finish) {
+                if (loadingViewVisible && curFinish) {
                     binding.infobar.isVisible = true
                     upInfoBar(
                         ReadManga.durChapterIndex,
@@ -274,10 +278,13 @@ class ReadMangaActivity : VMBaseActivity<ActivityMangaBinding, ReadMangaViewMode
                     loadMoreView.visible()
                 }
 
-                if (finish) {
-                    loadMoreView.stopLoad()
+                if (curFinish) {
                     if (!ReadManga.hasNextChapter) {
                         loadMoreView.noMore("暂无章节了！")
+                    } else if (nextFinish) {
+                        loadMoreView.stopLoad()
+                    } else {
+                        loadMoreView.startLoad()
                     }
                 }
             }
@@ -365,6 +372,7 @@ class ReadMangaActivity : VMBaseActivity<ActivityMangaBinding, ReadMangaViewMode
                 Backup.autoBack(this)
             }
         }
+        ReadManga.cancelPreDownloadTask()
         networkChangedListener.unRegister()
         stopAutoPage()
     }
