@@ -57,7 +57,6 @@ class App : Application() {
         CrashHandler(this)
         LogUtils.init(this)
         LogUtils.d("App", "onCreate")
-        LogUtils.logDeviceInfo()
         if (isDebuggable) {
             ThreadUtils.setThreadAssertsDisabledForTesting(true)
         }
@@ -76,6 +75,7 @@ class App : Application() {
         DefaultData.upVersion()
         AppFreezeMonitor.init(this)
         Coroutine.async {
+            LogUtils.logDeviceInfo()
             URL.setURLStreamHandlerFactory(ObsoleteUrlFactory(okHttpClient))
             launch { installGmsTlsProvider(appCtx) }
             RhinoScriptEngine
@@ -213,6 +213,14 @@ class App : Application() {
 
         companion object {
             private const val TAG = "[LiveEventBus]"
+        }
+    }
+
+    companion object {
+        init {
+            if (BuildConfig.DEBUG) {
+                System.setProperty("kotlinx.coroutines.debug", "on")
+            }
         }
     }
 
