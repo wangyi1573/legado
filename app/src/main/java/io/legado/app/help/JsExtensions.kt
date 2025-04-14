@@ -1,6 +1,5 @@
 package io.legado.app.help
 
-import android.net.Uri
 import android.webkit.WebSettings
 import androidx.annotation.Keep
 import cn.hutool.core.codec.Base64
@@ -39,12 +38,8 @@ import io.legado.app.utils.createFileReplace
 import io.legado.app.utils.externalCache
 import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.isAbsUrl
-import io.legado.app.utils.isContentScheme
-import io.legado.app.utils.isUri
 import io.legado.app.utils.longToastOnUi
 import io.legado.app.utils.mapAsync
-import io.legado.app.utils.readBytes
-import io.legado.app.utils.readText
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.toStringArray
@@ -104,14 +99,13 @@ interface JsExtensions : JsEncodeUtils {
             url.toString()
         }
         val analyzeUrl = AnalyzeUrl(urlStr, source = getSource(), coroutineContext = context)
-        return runBlocking(context) {
-            kotlin.runCatching {
-                analyzeUrl.getStrResponseAwait().body
-            }.onFailure {
-                AppLog.put("ajax(${urlStr}) error\n${it.localizedMessage}", it)
-            }.getOrElse {
-                it.stackTraceStr
-            }
+        return kotlin.runCatching {
+            analyzeUrl.getStrResponse().body
+        }.onFailure {
+            rhinoContext.ensureActive()
+            AppLog.put("ajax(${urlStr}) error\n${it.localizedMessage}", it)
+        }.getOrElse {
+            it.stackTraceStr
         }
     }
 
@@ -121,7 +115,11 @@ interface JsExtensions : JsEncodeUtils {
     fun ajaxAll(urlList: Array<String>): Array<StrResponse> {
         return runBlocking(context) {
             urlList.asFlow().mapAsync(AppConfig.threadCount) { url ->
-                val analyzeUrl = AnalyzeUrl(url, source = getSource())
+                val analyzeUrl = AnalyzeUrl(
+                    url,
+                    source = getSource(),
+                    coroutineContext = coroutineContext
+                )
                 analyzeUrl.getStrResponseAwait()
             }.flowOn(IO).toList().toTypedArray()
         }
@@ -131,29 +129,36 @@ interface JsExtensions : JsEncodeUtils {
      * 访问网络,返回Response<String>
      */
     fun connect(urlStr: String): StrResponse {
-        return runBlocking(context) {
-            val analyzeUrl = AnalyzeUrl(urlStr, source = getSource())
-            kotlin.runCatching {
-                analyzeUrl.getStrResponseAwait()
-            }.onFailure {
-                AppLog.put("connect(${urlStr}) error\n${it.localizedMessage}", it)
-            }.getOrElse {
-                StrResponse(analyzeUrl.url, it.stackTraceStr)
-            }
+        val analyzeUrl = AnalyzeUrl(
+            urlStr,
+            source = getSource(),
+            coroutineContext = context
+        )
+        return kotlin.runCatching {
+            analyzeUrl.getStrResponse()
+        }.onFailure {
+            rhinoContext.ensureActive()
+            AppLog.put("connect(${urlStr}) error\n${it.localizedMessage}", it)
+        }.getOrElse {
+            StrResponse(analyzeUrl.url, it.stackTraceStr)
         }
     }
 
     fun connect(urlStr: String, header: String?): StrResponse {
-        return runBlocking(context) {
-            val headerMap = GSON.fromJsonObject<Map<String, String>>(header).getOrNull()
-            val analyzeUrl = AnalyzeUrl(urlStr, headerMapF = headerMap, source = getSource())
-            kotlin.runCatching {
-                analyzeUrl.getStrResponseAwait()
-            }.onFailure {
-                AppLog.put("ajax($urlStr,$header) error\n${it.localizedMessage}", it)
-            }.getOrElse {
-                StrResponse(analyzeUrl.url, it.stackTraceStr)
-            }
+        val headerMap = GSON.fromJsonObject<Map<String, String>>(header).getOrNull()
+        val analyzeUrl = AnalyzeUrl(
+            urlStr,
+            headerMapF = headerMap,
+            source = getSource(),
+            coroutineContext = context
+        )
+        return kotlin.runCatching {
+            analyzeUrl.getStrResponse()
+        }.onFailure {
+            rhinoContext.ensureActive()
+            AppLog.put("ajax($urlStr,$header) error\n${it.localizedMessage}", it)
+        }.getOrElse {
+            StrResponse(analyzeUrl.url, it.stackTraceStr)
         }
     }
 
@@ -247,13 +252,11 @@ interface JsExtensions : JsEncodeUtils {
     }
 
     /**
-     * 可从网络，本地文件(阅读私有缓存目录和书籍保存位置支持相对路径)导入JavaScript脚本
+     * 可从网络，本地文件(阅读私有数据目录相对路径)导入JavaScript脚本
      */
     fun importScript(path: String): String {
         val result = when {
             path.startsWith("http") -> cacheFile(path)
-            path.isUri() -> Uri.parse(path).readText(appCtx)
-            path.startsWith("/storage") -> FileUtils.readText(path)
             else -> readTxtFile(path)
         }
         if (result.isBlank()) throw NoStackTraceException("$path 内容获取失败或者为空")
@@ -333,8 +336,8 @@ interface JsExtensions : JsEncodeUtils {
      * @return 相对路径
      */
     @Deprecated(
-        "Depreted",
-        ReplaceWith("downloadFile(url: String)")
+        "Deprecated",
+        ReplaceWith("downloadFile(url)")
     )
     fun downloadFile(content: String, url: String): String {
         val type = AnalyzeUrl(url, source = getSource(), coroutineContext = context).type
@@ -560,7 +563,12 @@ interface JsExtensions : JsEncodeUtils {
         } else {
             cachePath + File.separator + path
         }
-        return File(aPath)
+        val file = File(aPath)
+        val safePath = appCtx.externalCache.parent!!
+        if (!file.canonicalPath.startsWith(safePath)) {
+            throw SecurityException("非法路径")
+        }
+        return file
     }
 
     fun readFile(path: String): ByteArray? {
@@ -780,6 +788,10 @@ interface JsExtensions : JsEncodeUtils {
     /**
      * 解析字体Base64数据,返回字体解析类
      */
+    @Deprecated(
+        "Deprecated",
+        ReplaceWith("queryTTF(data)")
+    )
     fun queryBase64TTF(data: String?): QueryTTF? {
         log("queryBase64TTF(String)方法已过时,并将在未来删除；请无脑使用queryTTF(Any)替代，新方法支持传入 url、本地文件、base64、ByteArray 自动判断&自动缓存，特殊情况需禁用缓存请传入第二可选参数false:Boolean")
         return queryTTF(data)
@@ -804,8 +816,6 @@ interface JsExtensions : JsEncodeUtils {
                         if (qTTF != null) return qTTF
                     }
                     val font: ByteArray? = when {
-                        data.isContentScheme() -> Uri.parse(data).readBytes(appCtx)
-                        data.startsWith("/storage") -> File(data).readBytes()
                         data.isAbsUrl() -> AnalyzeUrl(
                             data,
                             source = getSource(),
@@ -933,6 +943,7 @@ interface JsExtensions : JsEncodeUtils {
      * 输出调试日志
      */
     fun log(msg: Any?): Any? {
+        rhinoContext.ensureActive()
         getSource()?.let {
             Debug.log(it.getKey(), msg.toString())
         } ?: Debug.log(msg.toString())
