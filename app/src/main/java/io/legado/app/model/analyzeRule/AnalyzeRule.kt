@@ -21,6 +21,7 @@ import io.legado.app.utils.GSON
 import io.legado.app.utils.NetworkUtils
 import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.getOrPutLimit
+import io.legado.app.utils.isDataUrl
 import io.legado.app.utils.isJson
 import io.legado.app.utils.printOnDebug
 import io.legado.app.utils.splitNotBlank
@@ -87,11 +88,6 @@ class AnalyzeRule(
         return this
     }
 
-    fun setCoroutineContext(context: CoroutineContext): AnalyzeRule {
-        coroutineContext = context.minusKey(ContinuationInterceptor)
-        return this
-    }
-
     fun setBaseUrl(baseUrl: String?): AnalyzeRule {
         baseUrl?.let {
             this.baseUrl = baseUrl
@@ -100,6 +96,9 @@ class AnalyzeRule(
     }
 
     fun setRedirectUrl(url: String): URL? {
+        if (url.isDataUrl()) {
+            return redirectUrl
+        }
         try {
             redirectUrl = URL(url)
         } catch (e: Exception) {
@@ -857,6 +856,12 @@ class AnalyzeRule(
         private val evalPattern =
             Pattern.compile("@get:\\{[^}]+?\\}|\\{\\{[\\w\\W]*?\\}\\}", Pattern.CASE_INSENSITIVE)
         private val regexPattern = Pattern.compile("\\$\\d{1,2}")
+
+        fun AnalyzeRule.setCoroutineContext(context: CoroutineContext): AnalyzeRule {
+            coroutineContext = context.minusKey(ContinuationInterceptor)
+            return this
+        }
+
     }
 
 }
