@@ -468,13 +468,18 @@ object ReadBookConfig {
         val configFile = configDir.getFile(configFileName)
         val config: Config = GSON.fromJsonObject<Config>(configFile.readText()).getOrThrow()
         if (config.textFont.isNotEmpty()) {
-            val fontName = FileUtils.getName(config.textFont)
+            val fontName = config.textFont
             val fontPath =
                 FileUtils.getPath(appCtx.externalFiles, "font", fontName)
-            if (!FileUtils.exist(fontPath)) {
-                configDir.getFile(fontName).copyTo(File(fontPath))
+            val fontFile = configDir.getFile(fontName)
+            if (fontFile.exists()) {
+                if (!FileUtils.exist(fontPath)) {
+                    fontFile.copyTo(File(fontPath))
+                }
+                config.textFont = fontPath
+            } else {
+                config.textFont = ""
             }
-            config.textFont = fontPath
         }
         if (config.bgType == 2) {
             val bgName = FileUtils.getName(config.bgStr)
